@@ -1,21 +1,8 @@
 import { Component, Suspense, useEffect, useState } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { ArcballControls, useGLTF, Bounds, useBounds, Center, Html, useProgress } from '@react-three/drei'
 
 const API_BASE = 'http://localhost:8000'
-
-// Standard engineering views: direction vector + camera up vector
-const VIEWS = {
-  iso:    { dir: [ 1,  1,  1], up: [0,  1,  0] },
-  front:  { dir: [ 0,  0,  1], up: [0,  1,  0] },
-  back:   { dir: [ 0,  0, -1], up: [0,  1,  0] },
-  right:  { dir: [ 1,  0,  0], up: [0,  1,  0] },
-  left:   { dir: [-1,  0,  0], up: [0,  1,  0] },
-  top:    { dir: [ 0,  1,  0], up: [0,  0, -1] }, // up=-Z avoids gimbal lock
-  bottom: { dir: [ 0, -1,  0], up: [0,  0,  1] },
-}
-
-const VIEW_LABELS = ['iso', 'front', 'back', 'right', 'left', 'top', 'bottom']
 
 function Loader() {
   const { progress } = useProgress()
@@ -28,37 +15,26 @@ function Loader() {
   )
 }
 
-function Model({ url }) {
+// Wraps the model in a rotation group driven by slider state.
+// ArcballControls is never touched — it orbits the rotated group from outside.
+function Model({ url, rotation }) {
   const { scene } = useGLTF(url)
   const bounds = useBounds()
+
   useEffect(() => {
     bounds.refresh(scene).fit()
   }, [scene, bounds])
+
   return (
-    <Center>
-      <primitive object={scene} />
-    </Center>
+    <group rotation={[rotation.x, rotation.y, rotation.z]}>
+      <Center>
+        <primitive object={scene} />
+      </Center>
+    </group>
   )
 }
 
-// Moves camera to a preset direction while preserving zoom distance
-function ViewSetter({ targetView, onViewSet }) {
-  const { camera } = useThree()
-  useEffect(() => {
-    if (!targetView) return
-    const dist = camera.position.length() || 100
-    const [dx, dy, dz] = targetView.dir
-    const len = Math.sqrt(dx * dx + dy * dy + dz * dz)
-    camera.position.set((dx / len) * dist, (dy / len) * dist, (dz / len) * dist)
-    camera.up.set(...targetView.up)
-    camera.lookAt(0, 0, 0)
-    camera.updateProjectionMatrix()
-    onViewSet()
-  }, [targetView]) // eslint-disable-line react-hooks/exhaustive-deps
-  return null
-}
-
-// Re-fits camera to model bounding box via Bounds API
+// Re-fits camera to model via Bounds — no camera position juggling
 function CameraReset({ resetKey }) {
   const bounds = useBounds()
   useEffect(() => {
@@ -78,10 +54,12 @@ class ViewerErrorBoundary extends Component {
   }
 }
 
+function toDeg(rad) { return Math.round(rad * 180 / Math.PI) }
+function toRad(deg) { return deg * Math.PI / 180 }
+
 export default function ModelViewer({ partId, meshAvailable }) {
-  const [resetKey, setResetKey]   = useState(0)
-  const [targetView, setTargetView] = useState(null)
-  const [controlKey, setControlKey] = useState(0) // remounts ArcballControls on view change
+  const [resetKey, setResetKey] = useState(0)
+  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 })
 
   if (!meshAvailable) {
     return <div className="viewer-fallback">3D model not available for this part.</div>
@@ -89,20 +67,18 @@ export default function ModelViewer({ partId, meshAvailable }) {
 
   const url = `${API_BASE}/parts/${partId}/mesh`
 
-  function handleReset() {
-    setResetKey(k => k + 1)
-    setControlKey(k => k + 1)
-  }
-
-  function handleView(name) {
-    setTargetView(VIEWS[name])
+  function setAxis(axis, degrees) {
+    setRotation(r => ({ ...r, [axis]: toRad(degrees) }))
   }
 
   return (
     <ViewerErrorBoundary>
       <div className="viewer-container">
-        <button className="viewer-btn viewer-btn--reset" onClick={handleReset}>
-          Reset
+        <button
+          className="viewer-btn viewer-btn--reset"
+          onClick={() => setResetKey(k => k + 1)}
+        >
+          Reset View
         </button>
 
         <Canvas camera={{ position: [1, 1, 1], fov: 45 }} gl={{ antialias: true }}>
@@ -113,30 +89,41 @@ export default function ModelViewer({ partId, meshAvailable }) {
 
           <Bounds fit margin={1.3}>
             <Suspense fallback={<Loader />}>
-              <Model url={url} />
+              <Model url={url} rotation={rotation} />
             </Suspense>
             <CameraReset resetKey={resetKey} />
           </Bounds>
 
-          <ViewSetter
-            targetView={targetView}
-            onViewSet={() => { setTargetView(null); setControlKey(k => k + 1) }}
-          />
-
-          <ArcballControls key={controlKey} makeDefault />
+          {/* Stable — no key prop, never remounted */}
+          <ArcballControls makeDefault />
         </Canvas>
 
-        <div className="viewer-toolbar">
-          {VIEW_LABELS.map(name => (
-            <button
-              key={name}
-              className="viewer-btn"
-              onClick={() => handleView(name)}
-            >
-              {name.charAt(0).toUpperCase() + name.slice(1)}
-            </button>
-          ))}
+        <div className="viewer-hint">
+          Drag to rotate · Scroll to zoom · Right-drag to pan
         </div>
+      </div>
+
+      {/* Model rotation controls — outside the canvas, no conflict with ArcballControls */}
+      <div className="viewer-sliders">
+        {['x', 'y', 'z'].map(axis => (
+          <div key={axis} className="viewer-slider-row">
+            <span className="viewer-slider-label">{axis.toUpperCase()}</span>
+            <input
+              type="range"
+              min={-180}
+              max={180}
+              value={toDeg(rotation[axis])}
+              onChange={e => setAxis(axis, Number(e.target.value))}
+            />
+            <span className="viewer-slider-value">{toDeg(rotation[axis])}°</span>
+          </div>
+        ))}
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => setRotation({ x: 0, y: 0, z: 0 })}
+        >
+          Reset Rotation
+        </button>
       </div>
     </ViewerErrorBoundary>
   )

@@ -320,23 +320,64 @@ a {
   z-index: 10;
 }
 
-/* Toolbar strip at bottom of viewer */
-.viewer-toolbar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+/* Slider panel below the dark canvas */
+.viewer-sliders {
   display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.6rem 0.75rem;
-  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
-  pointer-events: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fb;
+  border: 1px solid #eaecf0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 0;
 }
 
-.viewer-toolbar .viewer-btn {
-  pointer-events: all;
+.viewer-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.viewer-slider-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #999;
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+.viewer-slider-row input[type="range"] {
+  flex: 1;
+  accent-color: #1a1a2e;
+  height: 2px;
+  cursor: pointer;
+}
+
+.viewer-slider-value {
+  font-size: 0.7rem;
+  color: #666;
+  width: 3rem;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-secondary {
+  background: #f0f0f4;
+  color: #444;
+  border: 1px solid #e0e0e8;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e4e4ea;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
 }
 
 /* Fallback states */
