@@ -83,6 +83,26 @@ def tessellate_step_to_glb(step_path: str, glb_path: str, deflection: float) -> 
             logger.debug(f"STL written to temp: {tmp_stl}")
 
             tm = trimesh.load(tmp_stl, force="mesh")
+
+            # Fix face winding so all normals point outward.
+            # OCC's STL writer can produce inconsistent winding across B-rep
+            # face boundaries; bad normals survive into the GLB and cause
+            # faces to be black even with DoubleSide frontend material.
+            tm.fix_normals()
+
+            # Embed a neutral PBR material so the GLB looks reasonable when
+            # opened without any frontend material override.
+            try:
+                from trimesh.visual.material import PBRMaterial
+                tm.visual.material = PBRMaterial(
+                    name="part",
+                    baseColorFactor=[0.6, 0.65, 0.70, 1.0],  # light aluminum, linear
+                    metallicFactor=0.05,
+                    roughnessFactor=0.55,
+                )
+            except Exception:
+                pass  # older trimesh without PBRMaterial — silently skip
+
             os.makedirs(os.path.dirname(glb_path), exist_ok=True)
             tm.export(glb_path)
 
