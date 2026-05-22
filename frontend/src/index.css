@@ -292,39 +292,54 @@ a {
   margin-bottom: 0;    /* section spacing handled by .report-section */
 }
 
-.viewer-reset-btn {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 10;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.7);
-  font-size: 0.72rem;
+/* Shared viewer button style */
+.viewer-btn {
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.65);
+  font-size: 0.68rem;
   font-family: inherit;
-  padding: 0.3rem 0.75rem;
+  padding: 0.28rem 0.6rem;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
-.viewer-reset-btn:hover {
+.viewer-btn:hover {
   background: rgba(255,255,255,0.18);
   color: #fff;
 }
 
-.viewer-hint {
+/* Reset button — top-right corner */
+.viewer-btn--reset {
   position: absolute;
-  bottom: 0.65rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.68rem;
-  color: rgba(255,255,255,0.28);
-  pointer-events: none;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
 }
 
+/* Toolbar strip at bottom of viewer */
+.viewer-toolbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.viewer-toolbar .viewer-btn {
+  pointer-events: all;
+}
+
+/* Fallback states */
 .viewer-fallback {
   height: 140px;
   display: flex;
