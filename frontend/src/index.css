@@ -286,7 +286,7 @@ a {
 .viewer-container {
   position: relative;
   height: 440px;
-  background: #0f1117;
+  background: #1e2235;
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 0;    /* section spacing handled by .report-section */

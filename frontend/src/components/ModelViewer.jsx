@@ -1,4 +1,5 @@
 import { Component, Suspense, useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
 import { Canvas } from '@react-three/fiber'
 import { ArcballControls, useGLTF, Bounds, useBounds, Center, Html, useProgress } from '@react-three/drei'
 
@@ -15,6 +16,13 @@ function Loader() {
   )
 }
 
+const PART_MATERIAL = new THREE.MeshStandardMaterial({
+  color: '#b8c4d0',   // light cool-gray aluminum tone
+  metalness: 0.25,
+  roughness: 0.55,
+})
+const EDGE_MATERIAL = new THREE.LineBasicMaterial({ color: '#6a7a90' })
+
 // Wraps the model in a rotation group driven by slider state.
 // ArcballControls is never touched — it orbits the rotated group from outside.
 function Model({ url, rotation }) {
@@ -22,6 +30,16 @@ function Model({ url, rotation }) {
   const bounds = useBounds()
 
   useEffect(() => {
+    scene.traverse((child) => {
+      if (!child.isMesh) return
+      child.material = PART_MATERIAL
+      // Add hard-edge lines (15° threshold) once per mesh load
+      if (!child.userData.edgesAdded) {
+        const edges = new THREE.EdgesGeometry(child.geometry, 15)
+        child.add(new THREE.LineSegments(edges, EDGE_MATERIAL))
+        child.userData.edgesAdded = true
+      }
+    })
     bounds.refresh(scene).fit()
   }, [scene, bounds])
 
@@ -91,10 +109,12 @@ export default function ModelViewer({ partId, meshAvailable }) {
         </button>
 
         <Canvas camera={{ position: [1, 1, 1], fov: 45 }} gl={{ antialias: true }}>
-          <directionalLight position={[5, 8, 5]}   intensity={1.8} />
-          <directionalLight position={[-6, 2, -2]} intensity={0.5} />
-          <directionalLight position={[0, -4, -6]} intensity={0.2} />
-          <ambientLight intensity={0.25} />
+          <color attach="background" args={['#1e2235']} />
+          {/* Hemisphere gives natural sky/ground shading variation across faces */}
+          <hemisphereLight args={['#d0dff0', '#2a2a3a', 0.7]} />
+          <directionalLight position={[5, 8, 5]}   intensity={1.4} />
+          <directionalLight position={[-6, 2, -2]} intensity={0.55} />
+          <directionalLight position={[0, -4, -6]} intensity={0.25} />
 
           <Bounds fit margin={1.3}>
             <Suspense fallback={<Loader />}>
