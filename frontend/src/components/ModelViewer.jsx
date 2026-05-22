@@ -41,6 +41,7 @@ function Model({ url, rotation }) {
   useEffect(() => {
     scene.traverse((child) => {
       if (!child.isMesh) return
+      child.geometry.computeVertexNormals()
       child.material = PART_MATERIAL
       const edges = new THREE.EdgesGeometry(child.geometry, 15)
       child.add(new THREE.LineSegments(edges, EDGE_MATERIAL))
