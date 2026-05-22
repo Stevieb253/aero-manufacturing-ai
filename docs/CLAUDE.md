@@ -55,3 +55,5 @@ Future phases may include:
 - Cost estimation
 - Machine recommendations
 - AI manufacturing assistant
+
+Make no mistakes.
