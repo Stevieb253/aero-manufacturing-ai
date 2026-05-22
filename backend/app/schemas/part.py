@@ -8,6 +8,7 @@ class PartRead(BaseModel):
     file_path: str
     file_size: int
     upload_time: datetime
+    mesh_path: str | None
     bounding_box_x: float | None
     bounding_box_y: float | None
     bounding_box_z: float | None

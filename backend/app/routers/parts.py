@@ -2,6 +2,7 @@ import os
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -9,6 +10,7 @@ from app.database import get_db
 from app.models.part import Part
 from app.schemas.part import PartRead
 from app.services.geometry import extract_geometry
+from app.services.tessellation import tessellate_step_to_glb
 
 router = APIRouter(prefix="/parts", tags=["parts"])
 
@@ -28,20 +30,29 @@ def _validate_extension(filename: str) -> None:
 def upload_part(file: UploadFile = File(...), db: Session = Depends(get_db)):
     _validate_extension(file.filename)
 
-    unique_name = f"{uuid.uuid4().hex}_{file.filename}"
-    file_path = os.path.join(settings.upload_dir, unique_name)
+    stem = f"{uuid.uuid4().hex}_{file.filename}"
 
-    os.makedirs(settings.upload_dir, exist_ok=True)
+    steps_dir = os.path.join(settings.upload_dir, "steps")
+    meshes_dir = os.path.join(settings.upload_dir, "meshes")
+    os.makedirs(steps_dir, exist_ok=True)
+    os.makedirs(meshes_dir, exist_ok=True)
+
+    step_path = os.path.join(steps_dir, stem)
     contents = file.file.read()
-    with open(file_path, "wb") as f:
+    with open(step_path, "wb") as f:
         f.write(contents)
 
-    geometry = extract_geometry(file_path)
+    geometry = extract_geometry(step_path)
+
+    glb_filename = os.path.splitext(stem)[0] + ".glb"
+    glb_path = os.path.join(meshes_dir, glb_filename)
+    mesh_ok = tessellate_step_to_glb(step_path, glb_path)
 
     part = Part(
         original_name=file.filename,
-        file_path=file_path,
+        file_path=step_path,
         file_size=len(contents),
+        mesh_path=glb_path if mesh_ok else None,
         **geometry,
     )
     db.add(part)
@@ -53,6 +64,20 @@ def upload_part(file: UploadFile = File(...), db: Session = Depends(get_db)):
 @router.get("/", response_model=list[PartRead])
 def list_parts(db: Session = Depends(get_db)):
     return db.query(Part).order_by(Part.upload_time.desc()).all()
+
+
+@router.get("/{part_id}/mesh")
+def get_part_mesh(part_id: int, db: Session = Depends(get_db)):
+    part = db.query(Part).filter(Part.id == part_id).first()
+    if not part:
+        raise HTTPException(status_code=404, detail="Part not found")
+    if not part.mesh_path or not os.path.exists(part.mesh_path):
+        raise HTTPException(status_code=404, detail="Mesh not available for this part")
+    return FileResponse(
+        part.mesh_path,
+        media_type="model/gltf-binary",
+        filename=f"part_{part_id}.glb",
+    )
 
 
 @router.get("/{part_id}", response_model=PartRead)

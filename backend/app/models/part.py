@@ -13,7 +13,10 @@ class Part(Base):
     file_size: Mapped[int] = mapped_column(Integer, nullable=False)  # bytes
     upload_time: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    # Geometry placeholders — populated by geometry service
+    # Path to generated GLB mesh file (populated after tessellation)
+    mesh_path: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    # Geometry — populated by geometry service (pythonocc-core)
     bounding_box_x: Mapped[float | None] = mapped_column(Float, nullable=True)
     bounding_box_y: Mapped[float | None] = mapped_column(Float, nullable=True)
     bounding_box_z: Mapped[float | None] = mapped_column(Float, nullable=True)
