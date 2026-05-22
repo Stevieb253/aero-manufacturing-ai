@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
+from app.routers import parts
 
 app = FastAPI(title="Aero Manufacturing AI", version="0.1.0")
 
@@ -14,6 +15,8 @@ app.add_middleware(
 
 # Create tables on startup (simple approach for Phase 1)
 Base.metadata.create_all(bind=engine)
+
+app.include_router(parts.router)
 
 
 @app.get("/health")
