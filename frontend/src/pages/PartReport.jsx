@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getPart } from '../api/client.js'
+import ModelViewer from '../components/ModelViewer.jsx'
 
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`
@@ -42,6 +43,7 @@ export default function PartReport() {
   return (
     <div>
       <Link to="/" className="report-back">← Back to dashboard</Link>
+      <ModelViewer partId={part.id} meshAvailable={part.mesh_path !== null} />
       <div className="report-card">
         <h2>{part.original_name}</h2>
 
