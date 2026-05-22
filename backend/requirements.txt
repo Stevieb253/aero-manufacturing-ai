@@ -1,0 +1,13 @@
+# NOTE: pythonocc-core must be installed via conda-forge, not pip:
+#   conda install -c conda-forge pythonocc-core
+# All other dependencies can be installed with: pip install -r requirements.txt
+
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+sqlalchemy==2.0.30
+alembic==1.13.1
+psycopg2-binary==2.9.9
+python-multipart==0.0.9
+python-dotenv==1.0.1
+pydantic-settings==2.2.1
+trimesh==4.5.3          # 4.4.0+ required for NumPy 2.0 compatibility
