@@ -1,33 +1,48 @@
-import { Component, Suspense } from 'react'
+import { Component, Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF, Bounds, Html, useProgress } from '@react-three/drei'
+import { OrbitControls, useGLTF, Bounds, useBounds, Center, Html, useProgress } from '@react-three/drei'
 
 const API_BASE = 'http://localhost:8000'
 
-// Displays loading progress inside the WebGL canvas
 function Loader() {
   const { progress } = useProgress()
   return (
     <Html center>
-      <span style={{ color: '#aaa', fontSize: '0.8rem' }}>
-        {Math.round(progress)}%
+      <span style={{ color: '#888', fontSize: '0.8rem', fontFamily: 'sans-serif' }}>
+        Loading… {Math.round(progress)}%
       </span>
     </Html>
   )
 }
 
-// Loads and renders the GLB via useGLTF (Suspense-based)
 function Model({ url }) {
   const { scene } = useGLTF(url)
-  return <primitive object={scene} />
+  const bounds = useBounds()
+
+  // Fit camera to model after GLB is loaded
+  useEffect(() => {
+    bounds.refresh(scene).fit()
+  }, [scene, bounds])
+
+  return (
+    <Center>
+      <primitive object={scene} />
+    </Center>
+  )
 }
 
-// Catches GLB load errors so the rest of the page stays functional
+// Reset camera to fit model — driven by external resetKey prop
+function CameraReset({ resetKey }) {
+  const bounds = useBounds()
+  useEffect(() => {
+    if (resetKey > 0) bounds.refresh().fit()
+  }, [resetKey, bounds])
+  return null
+}
+
 class ViewerErrorBoundary extends Component {
   state = { failed: false }
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
+  static getDerivedStateFromError() { return { failed: true } }
   render() {
     if (this.state.failed) {
       return (
@@ -41,10 +56,12 @@ class ViewerErrorBoundary extends Component {
 }
 
 export default function ModelViewer({ partId, meshAvailable }) {
+  const [resetKey, setResetKey] = useState(0)
+
   if (!meshAvailable) {
     return (
       <div className="viewer-fallback">
-        3D model not yet available for this part.
+        3D model not available for this part.
       </div>
     )
   }
@@ -54,18 +71,46 @@ export default function ModelViewer({ partId, meshAvailable }) {
   return (
     <ViewerErrorBoundary>
       <div className="viewer-container">
-        <Canvas camera={{ position: [1, 1, 1], fov: 45 }}>
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[10, 10, 5]} intensity={1.2} />
-          <directionalLight position={[-10, -5, -5]} intensity={0.3} />
-          <Suspense fallback={<Loader />}>
-            <Bounds fit clip observe margin={1.3}>
+        <button
+          className="viewer-reset-btn"
+          onClick={() => setResetKey(k => k + 1)}
+        >
+          Reset View
+        </button>
+        <Canvas
+          camera={{ position: [1, 1, 1], fov: 45 }}
+          gl={{ antialias: true }}
+        >
+          {/* Key light — strong, from upper-front-right */}
+          <directionalLight position={[5, 8, 5]} intensity={1.8} />
+          {/* Fill light — soft, from left */}
+          <directionalLight position={[-6, 2, -2]} intensity={0.5} />
+          {/* Rim light — subtle, from below-back for depth */}
+          <directionalLight position={[0, -4, -6]} intensity={0.2} />
+          {/* Low ambient so directional lights create visible contrast */}
+          <ambientLight intensity={0.25} />
+
+          <Bounds fit margin={1.3}>
+            <Suspense fallback={<Loader />}>
               <Model url={url} />
-            </Bounds>
-          </Suspense>
-          <OrbitControls makeDefault />
+            </Suspense>
+            <CameraReset resetKey={resetKey} />
+          </Bounds>
+
+          <OrbitControls
+            makeDefault
+            enableDamping
+            dampingFactor={0.06}
+            rotateSpeed={0.65}
+            zoomSpeed={0.8}
+            panSpeed={0.8}
+            minPolarAngle={0}
+            maxPolarAngle={Math.PI}
+          />
         </Canvas>
-        <div className="viewer-hint">Drag to rotate · Scroll to zoom</div>
+        <div className="viewer-hint">
+          Left drag · rotate &nbsp;·&nbsp; Scroll · zoom &nbsp;·&nbsp; Right drag · pan
+        </div>
       </div>
     </ViewerErrorBoundary>
   )

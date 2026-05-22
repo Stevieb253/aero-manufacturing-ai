@@ -13,11 +13,19 @@ function formatDate(iso) {
   return new Date(iso).toLocaleString()
 }
 
-function GeomValue({ value, unit = 'mm' }) {
-  if (value === null || value === undefined) {
-    return <span className="pending">Pending analysis</span>
-  }
-  return <span>{value.toFixed(4)} {unit}</span>
+function GeomCard({ label, value, unit }) {
+  const hasValue = value !== null && value !== undefined
+  return (
+    <div className="geom-card">
+      <div className="geom-label">{label}</div>
+      <div className="geom-value">
+        {hasValue
+          ? <>{value.toFixed(3)}<span className="geom-unit">{unit}</span></>
+          : <span className="pending">—</span>
+        }
+      </div>
+    </div>
+  )
 }
 
 export default function PartReport() {
@@ -43,11 +51,30 @@ export default function PartReport() {
   return (
     <div>
       <Link to="/" className="report-back">← Back to dashboard</Link>
-      <ModelViewer partId={part.id} meshAvailable={part.mesh_path !== null} />
-      <div className="report-card">
-        <h2>{part.original_name}</h2>
 
+      <div className="report-card">
+        <h2 className="report-title">{part.original_name}</h2>
+
+        {/* 3D Viewer */}
         <div className="report-section">
+          <h3>3D Model</h3>
+          <ModelViewer partId={part.id} meshAvailable={part.mesh_path !== null} />
+        </div>
+
+        {/* Geometry — primary section */}
+        <div className="report-section">
+          <h3>Geometry</h3>
+          <div className="geom-grid">
+            <GeomCard label="Bounding Box X" value={part.bounding_box_x} unit=" mm" />
+            <GeomCard label="Bounding Box Y" value={part.bounding_box_y} unit=" mm" />
+            <GeomCard label="Bounding Box Z" value={part.bounding_box_z} unit=" mm" />
+            <GeomCard label="Volume"          value={part.volume}         unit=" mm³" />
+            <GeomCard label="Surface Area"    value={part.surface_area}   unit=" mm²" />
+          </div>
+        </div>
+
+        {/* File info — secondary */}
+        <div className="report-section report-section--secondary">
           <h3>File Info</h3>
           <table className="report-table">
             <tbody>
@@ -67,33 +94,9 @@ export default function PartReport() {
                 <td>Status</td>
                 <td>{part.status}</td>
               </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div className="report-section">
-          <h3>Geometry</h3>
-          <table className="report-table">
-            <tbody>
               <tr>
-                <td>Bounding box X</td>
-                <td><GeomValue value={part.bounding_box_x} /></td>
-              </tr>
-              <tr>
-                <td>Bounding box Y</td>
-                <td><GeomValue value={part.bounding_box_y} /></td>
-              </tr>
-              <tr>
-                <td>Bounding box Z</td>
-                <td><GeomValue value={part.bounding_box_z} /></td>
-              </tr>
-              <tr>
-                <td>Volume</td>
-                <td><GeomValue value={part.volume} unit="mm³" /></td>
-              </tr>
-              <tr>
-                <td>Surface area</td>
-                <td><GeomValue value={part.surface_area} unit="mm²" /></td>
+                <td>3D mesh</td>
+                <td>{part.mesh_path ? 'Available' : 'Not generated'}</td>
               </tr>
             </tbody>
           </table>
