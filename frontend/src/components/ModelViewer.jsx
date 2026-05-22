@@ -1,6 +1,6 @@
 import { Component, Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF, Bounds, useBounds, Center, Html, useProgress } from '@react-three/drei'
+import { ArcballControls, useGLTF, Bounds, useBounds, Center, Html, useProgress } from '@react-three/drei'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -97,16 +97,7 @@ export default function ModelViewer({ partId, meshAvailable }) {
             <CameraReset resetKey={resetKey} />
           </Bounds>
 
-          <OrbitControls
-            makeDefault
-            enableDamping
-            dampingFactor={0.06}
-            rotateSpeed={0.65}
-            zoomSpeed={0.8}
-            panSpeed={0.8}
-            minPolarAngle={0}
-            maxPolarAngle={Math.PI}
-          />
+          <ArcballControls makeDefault />
         </Canvas>
         <div className="viewer-hint">
           Left drag · rotate &nbsp;·&nbsp; Scroll · zoom &nbsp;·&nbsp; Right drag · pan
