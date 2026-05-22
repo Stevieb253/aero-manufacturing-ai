@@ -8,15 +8,16 @@ Requires:
 GLB files are visualization artifacts only. The original STEP file remains
 the source of truth for all precision geometry queries.
 
-LINEAR_DEFLECTION controls mesh quality vs file size (in mm).
-Lower values produce finer meshes. 0.1mm is a good default for single
-machined parts. Tune per part type if needed in future phases.
+Tessellation deflection is controlled by settings.tessellation_deflection (mm).
+Override in .env via TESSELLATION_DEFLECTION=0.05 for finer meshes.
 """
 
+import logging
 import os
 import tempfile
+import time
 
-LINEAR_DEFLECTION = 0.1  # mm
+logger = logging.getLogger(__name__)
 
 try:
     from OCC.Core.STEPControl import STEPControl_Reader
@@ -26,37 +27,52 @@ try:
     _OCC_AVAILABLE = True
 except ImportError:
     _OCC_AVAILABLE = False
+    logger.warning("pythonocc-core not available — tessellation disabled")
 
 try:
     import trimesh
     _TRIMESH_AVAILABLE = True
 except ImportError:
     _TRIMESH_AVAILABLE = False
+    logger.warning("trimesh not available — tessellation disabled")
 
 
-def tessellate_step_to_glb(step_path: str, glb_path: str) -> bool:
+def tessellate_step_to_glb(step_path: str, glb_path: str, deflection: float) -> bool:
     """Load a STEP file, tessellate the B-rep, and export as GLB.
 
-    Returns True on success, False if OCC/trimesh is unavailable or
-    the file cannot be processed. Caller can treat False as a soft
-    failure — the part record should still be saved without a mesh_path.
+    Args:
+        step_path:   Absolute or CWD-relative path to the source STEP file.
+        glb_path:    Destination path for the output GLB file.
+        deflection:  Linear tessellation deflection in mm. Lower = finer mesh.
+
+    Returns True on success, False on any failure. Never raises — callers
+    can treat False as a soft failure and proceed without a mesh.
     """
     if not _OCC_AVAILABLE or not _TRIMESH_AVAILABLE:
+        logger.warning("Tessellation skipped — OCC or trimesh unavailable")
         return False
 
+    logger.info(f"Tessellation starting: {step_path} (deflection={deflection}mm)")
+    t_start = time.perf_counter()
+
     try:
+        # --- Parse STEP ---
         reader = STEPControl_Reader()
+        logger.debug(f"Reading STEP file: {step_path}")
         if reader.ReadFile(step_path) != IFSelect_RetDone:
+            logger.error(f"STEP parsing failed: {step_path}")
             return False
 
         reader.TransferRoots()
         shape = reader.OneShape()
+        logger.debug("STEP parsed successfully")
 
-        # Tessellate the B-rep into a triangle mesh
-        mesh = BRepMesh_IncrementalMesh(shape, LINEAR_DEFLECTION)
+        # --- Tessellate B-rep → triangle mesh ---
+        logger.debug(f"Tessellating with deflection={deflection}mm")
+        mesh = BRepMesh_IncrementalMesh(shape, deflection)
         mesh.Perform()
 
-        # Write to a temporary STL, then convert to GLB via trimesh
+        # --- Export STL (temp) → GLB ---
         tmp_fd, tmp_stl = tempfile.mkstemp(suffix=".stl")
         os.close(tmp_fd)
 
@@ -64,14 +80,21 @@ def tessellate_step_to_glb(step_path: str, glb_path: str) -> bool:
             writer = StlAPI_Writer()
             writer.SetASCIIMode(False)
             writer.Write(shape, tmp_stl)
+            logger.debug(f"STL written to temp: {tmp_stl}")
 
             tm = trimesh.load(tmp_stl, force="mesh")
             os.makedirs(os.path.dirname(glb_path), exist_ok=True)
             tm.export(glb_path)
-            return True
+
         finally:
             if os.path.exists(tmp_stl):
                 os.unlink(tmp_stl)
 
-    except Exception:
+        elapsed = time.perf_counter() - t_start
+        logger.info(f"Tessellation complete: {glb_path} ({elapsed:.2f}s)")
+        return True
+
+    except Exception as exc:
+        elapsed = time.perf_counter() - t_start
+        logger.error(f"Tessellation failed after {elapsed:.2f}s: {exc}")
         return False

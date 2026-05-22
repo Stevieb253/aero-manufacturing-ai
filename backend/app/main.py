@@ -1,7 +1,15 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
 from app.routers import parts
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 app = FastAPI(title="Aero Manufacturing AI", version="0.1.0")
 

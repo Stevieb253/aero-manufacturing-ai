@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 
@@ -12,6 +13,7 @@ from app.schemas.part import PartRead
 from app.services.geometry import extract_geometry
 from app.services.tessellation import tessellate_step_to_glb
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/parts", tags=["parts"])
 
 ALLOWED_EXTENSIONS = {".step", ".stp"}
@@ -42,11 +44,17 @@ def upload_part(file: UploadFile = File(...), db: Session = Depends(get_db)):
     with open(step_path, "wb") as f:
         f.write(contents)
 
+    logger.info(f"Extracting geometry: {step_path}")
     geometry = extract_geometry(step_path)
+    logger.info(f"Geometry extraction complete for: {file.filename}")
 
     glb_filename = os.path.splitext(stem)[0] + ".glb"
     glb_path = os.path.join(meshes_dir, glb_filename)
-    mesh_ok = tessellate_step_to_glb(step_path, glb_path)
+    mesh_ok = tessellate_step_to_glb(
+        step_path, glb_path, deflection=settings.tessellation_deflection
+    )
+    if not mesh_ok:
+        logger.warning(f"Tessellation failed for {file.filename} — upload will proceed without mesh")
 
     part = Part(
         original_name=file.filename,
