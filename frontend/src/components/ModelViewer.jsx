@@ -17,11 +17,15 @@ function Loader() {
 }
 
 const PART_MATERIAL = new THREE.MeshStandardMaterial({
-  color: '#b8c4d0',   // light cool-gray aluminum tone
-  metalness: 0.25,
-  roughness: 0.55,
+  color: '#dce4ee',   // light neutral aluminum — bright enough against dark bg
+  metalness: 0.1,
+  roughness: 0.45,
 })
-const EDGE_MATERIAL = new THREE.LineBasicMaterial({ color: '#6a7a90' })
+const EDGE_MATERIAL = new THREE.LineBasicMaterial({
+  color: '#a0b0c4',
+  transparent: true,
+  opacity: 0.2,       // subtle shape definition, not wireframe
+})
 
 // Wraps the model in a rotation group driven by slider state.
 // ArcballControls is never touched — it orbits the rotated group from outside.
@@ -110,11 +114,11 @@ export default function ModelViewer({ partId, meshAvailable }) {
 
         <Canvas camera={{ position: [1, 1, 1], fov: 45 }} gl={{ antialias: true }}>
           <color attach="background" args={['#1e2235']} />
-          {/* Hemisphere gives natural sky/ground shading variation across faces */}
-          <hemisphereLight args={['#d0dff0', '#2a2a3a', 0.7]} />
-          <directionalLight position={[5, 8, 5]}   intensity={1.4} />
-          <directionalLight position={[-6, 2, -2]} intensity={0.55} />
-          <directionalLight position={[0, -4, -6]} intensity={0.25} />
+          {/* Lifted ground color keeps underside faces visible, not black */}
+          <hemisphereLight args={['#dce8f8', '#4a5068', 0.9]} />
+          <directionalLight position={[5, 8, 5]}   intensity={1.2} />
+          <directionalLight position={[-6, 2, -2]} intensity={0.5} />
+          <directionalLight position={[0, -4, -6]} intensity={0.3} />
 
           <Bounds fit margin={1.3}>
             <Suspense fallback={<Loader />}>
