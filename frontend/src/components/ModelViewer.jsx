@@ -17,14 +17,14 @@ function Loader() {
 }
 
 const PART_MATERIAL = new THREE.MeshStandardMaterial({
-  color: '#dce4ee',   // light neutral aluminum — bright enough against dark bg
-  metalness: 0.1,
+  color: '#aab4c0',   // medium steel-gray — reads clearly against light bg
+  metalness: 0.15,
   roughness: 0.45,
 })
 const EDGE_MATERIAL = new THREE.LineBasicMaterial({
-  color: '#a0b0c4',
+  color: '#4a5a6a',
   transparent: true,
-  opacity: 0.2,       // subtle shape definition, not wireframe
+  opacity: 0.25,      // subtle dark edges on light part
 })
 
 // Wraps the model in a rotation group driven by slider state.
@@ -113,12 +113,12 @@ export default function ModelViewer({ partId, meshAvailable }) {
         </button>
 
         <Canvas camera={{ position: [1, 1, 1], fov: 45 }} gl={{ antialias: true }}>
-          <color attach="background" args={['#1e2235']} />
-          {/* Lifted ground color keeps underside faces visible, not black */}
-          <hemisphereLight args={['#dce8f8', '#4a5068', 0.9]} />
-          <directionalLight position={[5, 8, 5]}   intensity={1.2} />
-          <directionalLight position={[-6, 2, -2]} intensity={0.5} />
-          <directionalLight position={[0, -4, -6]} intensity={0.3} />
+          <color attach="background" args={['#dde4ec']} />
+          {/* Near-white sky + mid-gray ground keeps all faces readable */}
+          <hemisphereLight args={['#eef4ff', '#707888', 1.1]} />
+          <directionalLight position={[5, 8, 5]}   intensity={1.0} />
+          <directionalLight position={[-4, 2, -2]} intensity={0.4} />
+          <directionalLight position={[0, -3, -5]} intensity={0.15} />
 
           <Bounds fit margin={1.3}>
             <Suspense fallback={<Loader />}>

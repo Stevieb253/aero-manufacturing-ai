@@ -286,7 +286,7 @@ a {
 .viewer-container {
   position: relative;
   height: 440px;
-  background: #1e2235;
+  background: #dde4ec;
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 0;    /* section spacing handled by .report-section */
@@ -294,9 +294,9 @@ a {
 
 /* Shared viewer button style */
 .viewer-btn {
-  background: rgba(255,255,255,0.09);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.65);
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(0,0,0,0.15);
+  color: #444;
   font-size: 0.68rem;
   font-family: inherit;
   padding: 0.28rem 0.6rem;
@@ -308,8 +308,8 @@ a {
 }
 
 .viewer-btn:hover {
-  background: rgba(255,255,255,0.18);
-  color: #fff;
+  background: rgba(255,255,255,0.95);
+  color: #222;
 }
 
 /* Reset button — top-right corner */
