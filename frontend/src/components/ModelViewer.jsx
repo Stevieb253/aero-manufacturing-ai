@@ -1,4 +1,4 @@
-import { Component, Suspense, useEffect, useRef, useState } from 'react'
+import { Component, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Canvas } from '@react-three/fiber'
 import { ArcballControls, useGLTF, Bounds, useBounds, Center, Html, useProgress } from '@react-three/drei'
@@ -17,32 +17,33 @@ function Loader() {
 }
 
 const PART_MATERIAL = new THREE.MeshStandardMaterial({
-  color: '#c8d2dc',   // medium-light aluminum — clearly readable on light bg
-  metalness: 0.05,    // nearly matte, no harsh reflections
+  color: '#c8d2dc',
+  metalness: 0.05,
   roughness: 0.55,
+  side: THREE.DoubleSide,   // renders both faces — fixes inverted normals from OCC→STL→GLB
+  vertexColors: false,       // explicitly ignore any vertex color data from the GLB
 })
 const EDGE_MATERIAL = new THREE.LineBasicMaterial({
   color: '#5a6878',
   transparent: true,
-  opacity: 0.2,       // subtle geometry definition only
+  opacity: 0.2,
 })
 
 // Wraps the model in a rotation group driven by slider state.
 // ArcballControls is never touched — it orbits the rotated group from outside.
 function Model({ url, rotation }) {
-  const { scene } = useGLTF(url)
+  const { scene: gltfScene } = useGLTF(url)
+  // Clone so we don't mutate the useGLTF cache — original GLB materials
+  // would otherwise persist across navigations and fight our overrides.
+  const scene = useMemo(() => gltfScene.clone(true), [gltfScene])
   const bounds = useBounds()
 
   useEffect(() => {
     scene.traverse((child) => {
       if (!child.isMesh) return
       child.material = PART_MATERIAL
-      // Add hard-edge lines (15° threshold) once per mesh load
-      if (!child.userData.edgesAdded) {
-        const edges = new THREE.EdgesGeometry(child.geometry, 15)
-        child.add(new THREE.LineSegments(edges, EDGE_MATERIAL))
-        child.userData.edgesAdded = true
-      }
+      const edges = new THREE.EdgesGeometry(child.geometry, 15)
+      child.add(new THREE.LineSegments(edges, EDGE_MATERIAL))
     })
     bounds.refresh(scene).fit()
   }, [scene, bounds])
