@@ -197,26 +197,67 @@ a {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-.report-card h2 {
+.report-title {
   font-size: 1.2rem;
   font-weight: 700;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
   word-break: break-all;
 }
 
 .report-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .report-section h3 {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #888;
-  margin-bottom: 0.75rem;
+  letter-spacing: 0.09em;
+  color: #999;
+  margin-bottom: 0.875rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.report-section--secondary h3 {
+  color: #bbb;
+}
+
+/* Geometry metric cards */
+.geom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.geom-card {
+  background: #f8f9fb;
+  border: 1px solid #eaecf0;
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+}
+
+.geom-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #999;
+  margin-bottom: 0.4rem;
+}
+
+.geom-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+
+.geom-unit {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: #888;
+  margin-left: 0.1rem;
 }
 
 .report-table {
@@ -244,35 +285,112 @@ a {
 /* 3D viewer */
 .viewer-container {
   position: relative;
-  height: 420px;
-  background: #111827;
+  height: 440px;
+  background: #dde4ec;
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 2rem;
+  margin-bottom: 0;    /* section spacing handled by .report-section */
 }
 
-.viewer-hint {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.35);
-  pointer-events: none;
+/* Shared viewer button style */
+.viewer-btn {
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(0,0,0,0.15);
+  color: #444;
+  font-size: 0.68rem;
+  font-family: inherit;
+  padding: 0.28rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
+  line-height: 1.4;
 }
 
+.viewer-btn:hover {
+  background: rgba(255,255,255,0.95);
+  color: #222;
+}
+
+/* Reset button — top-right corner */
+.viewer-btn--reset {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+}
+
+/* Slider panel below the dark canvas */
+.viewer-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fb;
+  border: 1px solid #eaecf0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 0;
+}
+
+.viewer-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.viewer-slider-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #999;
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+.viewer-slider-row input[type="range"] {
+  flex: 1;
+  accent-color: #1a1a2e;
+  height: 2px;
+  cursor: pointer;
+}
+
+.viewer-slider-value {
+  font-size: 0.7rem;
+  color: #666;
+  width: 3rem;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-secondary {
+  background: #f0f0f4;
+  color: #444;
+  border: 1px solid #e0e0e8;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e4e4ea;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+/* Fallback states */
 .viewer-fallback {
-  height: 160px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f9f9f9;
+  background: #f9f9fb;
   border-radius: 8px;
-  border: 1px dashed #ddd;
-  color: #bbb;
+  border: 1px dashed #e0e0e0;
+  color: #c0c0c0;
   font-size: 0.875rem;
-  margin-bottom: 2rem;
 }
 
 .viewer-error {
