@@ -1,4 +1,4 @@
-import { Component, Suspense, useEffect, useState } from 'react'
+import { Component, Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ArcballControls, useGLTF, Bounds, useBounds, Center, Html, useProgress } from '@react-three/drei'
 
@@ -34,12 +34,20 @@ function Model({ url, rotation }) {
   )
 }
 
-// Re-fits camera to model via Bounds — no camera position juggling
-function CameraReset({ resetKey }) {
+// Re-fits camera and resets ArcballControls target so pan drift is cleared.
+// bounds.fit() alone moves the camera but leaves ArcballControls orbiting
+// the old (panned) target — resetting target to origin fixes that.
+function CameraReset({ resetKey, controlsRef }) {
   const bounds = useBounds()
   useEffect(() => {
-    if (resetKey > 0) bounds.refresh().fit()
-  }, [resetKey, bounds])
+    if (resetKey > 0) {
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0)
+        controlsRef.current.update()
+      }
+      bounds.refresh().fit()
+    }
+  }, [resetKey, bounds, controlsRef])
   return null
 }
 
@@ -60,6 +68,7 @@ function toRad(deg) { return deg * Math.PI / 180 }
 export default function ModelViewer({ partId, meshAvailable }) {
   const [resetKey, setResetKey] = useState(0)
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 })
+  const controlsRef = useRef()
 
   if (!meshAvailable) {
     return <div className="viewer-fallback">3D model not available for this part.</div>
@@ -91,11 +100,11 @@ export default function ModelViewer({ partId, meshAvailable }) {
             <Suspense fallback={<Loader />}>
               <Model url={url} rotation={rotation} />
             </Suspense>
-            <CameraReset resetKey={resetKey} />
+            <CameraReset resetKey={resetKey} controlsRef={controlsRef} />
           </Bounds>
 
           {/* Stable — no key prop, never remounted */}
-          <ArcballControls makeDefault />
+          <ArcballControls ref={controlsRef} makeDefault />
         </Canvas>
 
         <div className="viewer-hint">
